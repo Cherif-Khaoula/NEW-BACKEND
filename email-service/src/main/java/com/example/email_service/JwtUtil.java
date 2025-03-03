@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 
 @Component
@@ -18,6 +19,17 @@ public class JwtUtil {
     // Extraction du username à partir du token
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+    public List<String> extractPermissions(String token) {
+        Claims claims = extractClaims(token);
+        return claims.get("permissions", List.class);
+    }
+
+    private Claims extractClaims(String token) {
+        return Jwts.parser()
+                .setSigningKey(getSignKey())
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     // Extraction d'une revendication spécifique

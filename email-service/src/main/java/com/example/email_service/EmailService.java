@@ -34,33 +34,45 @@ public class EmailService {
         this.restTemplate = restTemplate;
     }
 
-    public void sendEmailWithAttachment(String fromEmail, String to, String subject, String text, MultipartFile file)
+    public void sendEmailWithAttachment(String fromEmail, List<String> toList, String subject, String text, MultipartFile file)
             throws MessagingException, IOException {
-
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(text);
-        helper.setFrom(fromEmail);
 
         String attachmentUrl = null;
         if (file != null && !file.isEmpty()) {
             try {
                 attachmentUrl = uploadFileToAttachmentService(file);
-                helper.addAttachment(file.getOriginalFilename(), file);
             } catch (IOException e) {
                 throw new IOException("Erreur lors de l'upload du fichier : " + e.getMessage());
             }
         }
 
-        mailSender.send(message);
+        for (String to : toList) {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
-        // Archivage de l'e-mail
-        EmailArchive archive = new EmailArchive(fromEmail, to, subject, text, attachmentUrl);
-        emailArchiveRepository.save(archive);
+                helper.setFrom(fromEmail);
+                helper.setTo(to);
+                helper.setSubject(subject);
+                helper.setText(text);
+
+                if (attachmentUrl != null) {
+                    helper.addAttachment(file.getOriginalFilename(), file);
+                }
+
+                mailSender.send(message);
+                System.out.println("✅ Email envoyé avec succès à : " + to);
+
+                // Archivage
+                EmailArchive archive = new EmailArchive(fromEmail, to, subject, text, attachmentUrl);
+                emailArchiveRepository.save(archive);
+
+            } catch (Exception e) {
+                System.err.println("❌ Erreur lors de l'envoi de l'email à : " + to + " -> " + e.getMessage());
+            }
+        }
     }
+
 
     private String uploadFileToAttachmentService(MultipartFile file) throws IOException {
         HttpHeaders headers = new HttpHeaders();
@@ -82,6 +94,25 @@ public class EmailService {
             return response.getBody().get("filePath").toString();
         } else {
             throw new IOException("Échec de l'upload du fichier !");
+        }
+    }
+
+
+    public void sendEmailWithoutAttachment(String from, List<String> toList, String subject, String text) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(from);
+        helper.setTo(toList.toArray(new String[0])); // Convertir la liste en tableau
+        helper.setSubject(subject);
+        helper.setText(text, true);
+
+        mailSender.send(message);
+
+        // 🔴 Archivage pour chaque destinataire
+        for (String to : toList) {
+            EmailArchive archive = new EmailArchive(from, to, subject, text, null);
+            emailArchiveRepository.save(archive);
         }
     }
 

@@ -45,6 +45,7 @@ public class WebSecurityConfiguration {
                 .requestMatchers("/api/roles/**").authenticated()
                 .requestMatchers("/api/permissions/**").authenticated()
                 .requestMatchers("/api/users/**").authenticated()
+
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()

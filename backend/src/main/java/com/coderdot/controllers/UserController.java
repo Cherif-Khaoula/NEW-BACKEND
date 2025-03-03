@@ -87,4 +87,9 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur serveur : " + e.getMessage());
         }
     }
+    @GetMapping("/emails-cme")
+    public ResponseEntity<List<String>> getEmailsOfCmeMembers() {
+        List<String> emails = userService.getEmailsOfCmeMembers(); // 🔥 Récupérer les emails via le service
+        return ResponseEntity.ok(emails);
+    }
 }

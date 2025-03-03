@@ -118,4 +118,7 @@ public class UserService {
         }
         userRepository.deleteById(id);
     }
+    public List<String> getEmailsOfCmeMembers() {
+        return userRepository.findEmailsOfCmeMembers();
+    }
 }
